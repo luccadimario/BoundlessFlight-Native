@@ -1,0 +1,29 @@
+{
+  "cli": {
+    "version": ">= 13.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://brainy-vulture-983.convex.cloud",
+        "EXPO_PUBLIC_CONVEX_SITE_URL": "https://brainy-vulture-983.convex.site"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://acoustic-ostrich-70.convex.cloud",
+        "EXPO_PUBLIC_CONVEX_SITE_URL": "https://acoustic-ostrich-70.convex.site"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

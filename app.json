@@ -1,16 +1,22 @@
 {
   "expo": {
     "name": "BoundlessFlight",
-    "slug": "BoundlessFlight",
+    "slug": "boundlessflight",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "boundlessflight",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.luccadimario.boundlessflight",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.luccadimario.boundlessflight",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,9 +34,18 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#081226",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-secure-store",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BoundlessFlight uses your photo library to attach logbook pages and documents to your aircraft's maintenance records.",
+          "cameraPermission": "BoundlessFlight uses the camera to scan handwritten logbook pages into structured maintenance entries."
         }
       ]
     ],

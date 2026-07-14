@@ -1,56 +1,53 @@
-# Welcome to your Expo app 👋
+# BoundlessFlight ✈️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Maintenance tracking for general-aviation aircraft — logbooks, inspections, ADs, documents, and squawks in one place. Built with Expo (SDK 57), NativeWind v5, and Convex.
 
-## Get started
+## What it does
 
-1. Install dependencies
+- **Logbook** — 91.417-compliant maintenance entries (description of work, date, time in service, signature + certificate number, return to service) per airframe / engine / propeller / avionics, with photo attachments.
+- **Scan & parse** — photograph a handwritten logbook page and it's transcribed into a structured entry (Claude Opus 4.8 vision via a Convex action).
+- **Compliance (AV1ATE)** — Annual (12 cal-mo), 100-hour, transponder & pitot-static (24 cal-mo), ELT (12 cal-mo) + battery, VOR 30-day, oil changes, and 7-year registration renewal, each color-coded ok / due soon / overdue by calendar date and tach hours.
+- **Airworthiness Directives** — one-time and recurring ADs with method of compliance and next-due by hours or calendar months.
+- **Documents** — airworthiness certificate, registration, W&B, POH/AFM, insurance, STC/337s, and scanned logbooks (with an ARROW checklist).
+- **Squawks** — grounding / monitor / note discrepancies with resolution tracking.
+- **Dashboard** — at-a-glance airworthiness status per aircraft, fleet switcher, tach/Hobbs/SMOH tracking.
 
-   ```bash
-   npm install
-   ```
+## Running it
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Two terminals:
 
 ```bash
-npm run reset-project
+# 1. Backend (local anonymous Convex deployment)
+npm run convex
+
+# 2. App
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Press `i` for the iOS simulator or `w` for web. The Convex URL is read from `.env.local` (`EXPO_PUBLIC_CONVEX_URL`).
 
-### Other setup steps
+> **Physical device note:** the anonymous local deployment listens on `127.0.0.1`, which a phone can't reach. For device testing, link a free cloud dev deployment with `npx convex login` then `npx convex dev` — `.env.local` updates automatically.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## OCR setup
 
-## Learn more
+Logbook scanning calls the Claude API from a Convex action. Set the key on the deployment:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npx convex env set ANTHROPIC_API_KEY sk-ant-...
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Without the key everything else works; the scan button reports that OCR isn't configured.
 
-## Join the community
+## Project layout
 
-Join our community of developers creating universal apps.
+- `convex/` — schema + functions (aircraft, logEntries, inspections, ads, documents, squawks, ocr)
+- `src/app/` — expo-router routes: `(tabs)/` (Dashboard, Logbook, Compliance, Docs, Squawks) + modal forms
+- `src/lib/currency.ts` — due-date/-hours math (calendar-month rule, hour intervals)
+- `src/lib/aircraft-context.tsx` — selected-aircraft state
+- `src/components/ui.tsx` — shared NativeWind UI kit
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Notes
+
+- NativeWind v5 is a pre-release (`nativewind@preview`); `lightningcss` is pinned to 1.30.1 per its install guide.
+- Convex Node actions ("use node") need Node 18/20/22/24 installed; this machine runs Node 23, so the OCR action targets Convex's default V8 runtime using `fetch` directly.
+- New aircraft are seeded with the standard inspection set automatically; intervals are editable and items can be untracked (e.g. 100-hour for private-only ops, VOR for VFR-only).
