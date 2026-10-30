@@ -5,7 +5,7 @@ Maintenance tracking for general-aviation aircraft — logbooks, inspections, AD
 ## What it does
 
 - **Logbook** — 91.417-compliant maintenance entries (description of work, date, time in service, signature + certificate number, return to service) per airframe / engine / propeller / avionics, with photo attachments.
-- **Scan & parse** — photograph a handwritten logbook page and it's transcribed into a structured entry (Claude Opus 4.8 vision via a Convex action).
+- **Scan & parse** — photograph a handwritten logbook page and it's transcribed into a structured entry (Claude Haiku 5.5 vision via a Convex action; photos are downscaled to 1568px JPEG on device first).
 - **Compliance (AV1ATE)** — Annual (12 cal-mo), 100-hour, transponder & pitot-static (24 cal-mo), ELT (12 cal-mo) + battery, VOR 30-day, oil changes, and 7-year registration renewal, each color-coded ok / due soon / overdue by calendar date and tach hours.
 - **Airworthiness Directives** — one-time and recurring ADs with method of compliance and next-due by hours or calendar months.
 - **Documents** — airworthiness certificate, registration, W&B, POH/AFM, insurance, STC/337s, and scanned logbooks (with an ARROW checklist).
@@ -18,7 +18,7 @@ Two terminals:
 
 ```bash
 # 1. Backend (local anonymous Convex deployment)
-npm run convex
+npm run convex:dev
 
 # 2. App
 npx expo start
@@ -27,6 +27,18 @@ npx expo start
 Press `i` for the iOS simulator or `w` for web. The Convex URL is read from `.env.local` (`EXPO_PUBLIC_CONVEX_URL`).
 
 > **Physical device note:** the anonymous local deployment listens on `127.0.0.1`, which a phone can't reach. For device testing, link a free cloud dev deployment with `npx convex login` then `npx convex dev` — `.env.local` updates automatically.
+
+## Tests
+
+```bash
+npm test
+```
+
+Runs the Convex function suite (permissions, sharing, voiding — via `convex-test`) and the due-date math, pinned to US Central time so UTC date bugs surface.
+
+## Sharing
+
+Owners invite people from the people icon on the Dashboard. **Mechanic** access can add log entries, record inspections/ADs, upload documents, and resolve squawks; **viewer** access is read-only plus reporting squawks. Settings, deletes, and sharing stay with the owner. Log entries are never deleted — they're voided with a reason and stay in the record (and the PDF export).
 
 ## OCR setup
 

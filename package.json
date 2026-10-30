@@ -63,7 +63,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "convex": "convex dev",
+    "convex:dev": "convex dev",
     "test": "TZ=America/Chicago vitest run"
   },
   "private": true
