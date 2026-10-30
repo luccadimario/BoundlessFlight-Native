@@ -24,10 +24,10 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
 
 const modalOptions = {
   presentation: "modal" as const,
-  headerStyle: { backgroundColor: "#0e1c36" },
-  headerTintColor: "#ffffff",
+  headerStyle: { backgroundColor: "#000000" },
+  headerTintColor: "#0a84ff",
   headerTitleStyle: { color: "#ffffff" },
-  contentStyle: { backgroundColor: "#081226" },
+  contentStyle: { backgroundColor: "#000000" },
 };
 
 export default function RootLayout() {
@@ -49,7 +49,7 @@ export default function RootLayout() {
         </Unauthenticated>
         <Authenticated>
           <AircraftProvider>
-            <Stack screenOptions={{ contentStyle: { backgroundColor: "#081226" } }}>
+            <Stack screenOptions={{ contentStyle: { backgroundColor: "#000000" } }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="add-aircraft" options={{ ...modalOptions, title: "Add Aircraft" }} />
               <Stack.Screen name="add-log" options={{ ...modalOptions, title: "New Log Entry" }} />

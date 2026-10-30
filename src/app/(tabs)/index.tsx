@@ -74,7 +74,7 @@ export default function Dashboard() {
         <Title>BoundlessFlight</Title>
         <View className="flex-row items-center gap-3">
           <Pressable onPress={() => router.push("/add-aircraft")} className="p-1 active:opacity-60">
-            <Ionicons name="add-circle-outline" size={28} color="#22d3ee" />
+            <Ionicons name="add-circle-outline" size={28} color="#0a84ff" />
           </Pressable>
           <Pressable
             onPress={() =>
@@ -84,7 +84,7 @@ export default function Dashboard() {
               ])
             }
             className="p-1 active:opacity-60">
-            <Ionicons name="log-out-outline" size={26} color="#4f83cd" />
+            <Ionicons name="log-out-outline" size={26} color="#8e8e93" />
           </Pressable>
         </View>
       </View>
@@ -95,10 +95,8 @@ export default function Dashboard() {
           <Pressable
             key={a._id}
             onPress={() => setAircraftId(a._id)}
-            className={`rounded-full border px-4 py-2 ${
-              a._id === current._id
-                ? "border-instrument bg-instrument/15"
-                : "border-flight-700 bg-flight-900"
+            className={`rounded-lg px-4 py-2 ${
+              a._id === current._id ? "bg-instrument/15" : "bg-flight-900"
             }`}>
             <Text
               className={
@@ -172,13 +170,27 @@ export default function Dashboard() {
       <SectionTitle>Quick actions</SectionTitle>
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <Button label="📷 Scan Entry" onPress={() => router.push({ pathname: "/add-log", params: { scan: "1" } })} />
+          <Button
+            label="Scan Entry"
+            icon="camera-outline"
+            onPress={() => router.push({ pathname: "/add-log", params: { scan: "1" } })}
+          />
         </View>
         <View className="flex-1">
-          <Button label="＋ Log Entry" variant="secondary" onPress={() => router.push("/add-log")} />
+          <Button
+            label="Log Entry"
+            icon="add"
+            variant="secondary"
+            onPress={() => router.push("/add-log")}
+          />
         </View>
       </View>
-      <Button label="Upload Document" variant="secondary" onPress={() => router.push("/add-document")} />
+      <Button
+        label="Upload Document"
+        icon="cloud-upload-outline"
+        variant="secondary"
+        onPress={() => router.push("/add-document")}
+      />
     </Screen>
   );
 }

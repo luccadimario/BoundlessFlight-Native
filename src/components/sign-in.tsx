@@ -1,106 +1,115 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
 
 import { authClient } from "@/lib/auth-client";
-import { Button, Card, Field } from "@/components/ui";
 
 export function SignInScreen() {
-  const [mode, setMode] = useState<"signIn" | "signUp">("signIn");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  async function submit() {
+  async function signInWithApple() {
     setError(null);
-    setBusy(true);
     try {
-      const result =
-        mode === "signIn"
-          ? await authClient.signIn.email({ email: email.trim(), password })
-          : await authClient.signUp.email({
-              email: email.trim(),
-              password,
-              name: name.trim() || email.trim(),
-            });
+      const nonce = Crypto.randomUUID();
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce,
+      });
+      if (!credential.identityToken) {
+        setError("Apple didn't return an identity token. Please try again.");
+        return;
+      }
+      const result = await authClient.signIn.social({
+        provider: "apple",
+        idToken: {
+          token: credential.identityToken,
+          nonce,
+          // Apple only ever sends the name/email on the user's first
+          // authorization, so pass it through when present.
+          user:
+            credential.fullName?.givenName || credential.email
+              ? {
+                  name: {
+                    firstName: credential.fullName?.givenName ?? undefined,
+                    lastName: credential.fullName?.familyName ?? undefined,
+                  },
+                  email: credential.email ?? undefined,
+                }
+              : undefined,
+        },
+      });
       if (result.error) {
         setError(result.error.message ?? "Something went wrong.");
       }
     } catch (err) {
+      // Code 1001 is Apple's own "user canceled" — not an error worth surfacing.
+      if (err && typeof err === "object" && "code" in err && err.code === "ERR_REQUEST_CANCELED") {
+        return;
+      }
       setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setBusy(false);
     }
   }
 
-  const canSubmit = email.trim().length > 3 && password.length >= 8;
-
   return (
-    <SafeAreaView className="flex-1 bg-flight-950">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1 justify-center px-6">
-        <Text className="text-center text-3xl font-extrabold text-white">
-          Boundless<Text className="text-instrument">Flight</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>
+          Boundless<Text style={styles.titleAccent}>Flight</Text>
         </Text>
-        <Text className="mb-6 mt-1 text-center text-sm text-flight-300">
-          Your aircraft's records, wherever you fly.
-        </Text>
+        <Text style={styles.subtitle}>Your aircraft's records, wherever you fly.</Text>
 
-        <Card className="gap-3">
-          {mode === "signUp" && (
-            <Field label="Name" value={name} onChangeText={setName} placeholder="Amelia Earhart" />
-          )}
-          <Field
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="you@example.com"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <Field
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="At least 8 characters"
-            secureTextEntry
-            autoComplete={mode === "signIn" ? "current-password" : "new-password"}
-          />
-          {error && <Text className="text-sm text-warning">{error}</Text>}
-          <Button
-            label={mode === "signIn" ? "Sign In" : "Create Account"}
-            onPress={() => void submit()}
-            loading={busy}
-            disabled={!canSubmit}
-          />
-        </Card>
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+          cornerRadius={12}
+          style={styles.appleButton}
+          onPress={() => void signInWithApple()}
+        />
 
-        <Pressable
-          onPress={() => {
-            setMode(mode === "signIn" ? "signUp" : "signIn");
-            setError(null);
-          }}
-          className="mt-4 active:opacity-60">
-          <Text className="text-center text-sm text-flight-300">
-            {mode === "signIn" ? (
-              <>
-                New here? <Text className="font-semibold text-instrument">Create an account</Text>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <Text className="font-semibold text-instrument">Sign in</Text>
-              </>
-            )}
-          </Text>
-        </Pressable>
-
-        <View className="h-10" />
-      </KeyboardAvoidingView>
+        {error && <Text style={styles.error}>{error}</Text>}
+      </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  title: {
+    textAlign: "center",
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  titleAccent: {
+    color: "#0a84ff",
+  },
+  subtitle: {
+    marginTop: 4,
+    marginBottom: 40,
+    textAlign: "center",
+    fontSize: 14,
+    color: "#98989d",
+  },
+  appleButton: {
+    height: 50,
+  },
+  error: {
+    marginTop: 16,
+    textAlign: "center",
+    fontSize: 14,
+    color: "#ff453a",
+  },
+});

@@ -9,6 +9,7 @@ import {
   type TextInputProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { DueStatus } from "@/lib/currency";
 
 export function Screen({
@@ -36,15 +37,11 @@ export function Screen({
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <View className={`rounded-2xl border border-flight-800 bg-flight-900 p-4 ${className ?? ""}`}>
-      {children}
-    </View>
-  );
+  return <View className={`rounded-2xl bg-flight-900 p-4 ${className ?? ""}`}>{children}</View>;
 }
 
 export function Title({ children }: { children: ReactNode }) {
-  return <Text className="text-2xl font-bold text-white">{children}</Text>;
+  return <Text className="text-[34px] font-bold tracking-tight text-white">{children}</Text>;
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
@@ -57,29 +54,37 @@ export function SectionTitle({ children }: { children: ReactNode }) {
 
 export function Button({
   label,
+  icon,
   onPress,
   variant = "primary",
   disabled,
   loading,
 }: {
   label: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   variant?: "primary" | "secondary" | "danger" | "ghost";
   disabled?: boolean;
   loading?: boolean;
 }) {
-  const base = "flex-row items-center justify-center rounded-xl px-4 py-3 active:opacity-70";
+  const base = "flex-row items-center justify-center gap-1.5 rounded-xl px-4 py-3.5 active:opacity-70";
   const styles = {
     primary: "bg-instrument",
-    secondary: "bg-flight-800 border border-flight-700",
-    danger: "bg-warning/15 border border-warning/40",
+    secondary: "bg-flight-800",
+    danger: "bg-warning/15",
     ghost: "",
   }[variant];
   const textStyles = {
-    primary: "text-flight-950 font-bold",
+    primary: "text-white font-semibold",
     secondary: "text-white font-semibold",
     danger: "text-warning font-semibold",
     ghost: "text-instrument font-semibold",
+  }[variant];
+  const iconColor = {
+    primary: "#ffffff",
+    secondary: "#ffffff",
+    danger: "#ff453a",
+    ghost: "#0a84ff",
   }[variant];
   return (
     <Pressable
@@ -87,9 +92,12 @@ export function Button({
       disabled={disabled || loading}
       className={`${base} ${styles} ${disabled || loading ? "opacity-40" : ""}`}>
       {loading ? (
-        <ActivityIndicator size="small" color={variant === "primary" ? "#081226" : "#22d3ee"} />
+        <ActivityIndicator size="small" color={variant === "secondary" || variant === "primary" ? "#ffffff" : iconColor} />
       ) : (
-        <Text className={textStyles}>{label}</Text>
+        <>
+          {icon && <Ionicons name={icon} size={18} color={iconColor} />}
+          <Text className={textStyles}>{label}</Text>
+        </>
       )}
     </Pressable>
   );
@@ -105,8 +113,8 @@ export function Field({
         {label}
       </Text>
       <TextInput
-        placeholderTextColor="#4f83cd"
-        className="rounded-xl border border-flight-700 bg-flight-800 px-3 py-3 text-base text-white"
+        placeholderTextColor="#8e8e93"
+        className="rounded-lg bg-flight-800 px-3 py-3 text-base text-white"
         {...props}
       />
     </View>
@@ -131,14 +139,10 @@ export function ChipRow<T extends string>({
         <Pressable
           key={opt}
           onPress={() => onChange(opt)}
-          className={`rounded-full border px-3 py-1.5 ${
-            value === opt
-              ? "border-instrument bg-instrument/15"
-              : "border-flight-700 bg-flight-800"
-          }`}>
+          className={`rounded-lg px-3 py-1.5 ${value === opt ? "bg-instrument/15" : "bg-flight-800"}`}>
           <Text
             className={`text-sm capitalize ${
-              value === opt ? "font-semibold text-instrument" : "text-flight-200"
+              value === opt ? "font-semibold text-instrument" : "text-flight-300"
             }`}>
             {labels?.[opt] ?? opt.replaceAll("_", " ")}
           </Text>
@@ -177,8 +181,8 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
 
 export function LoadingScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-flight-950">
-      <ActivityIndicator size="large" color="#22d3ee" />
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#000000" }}>
+      <ActivityIndicator size="large" color="#0a84ff" />
     </View>
   );
 }

@@ -57,12 +57,12 @@ export default function Logbook() {
               );
             }}
             className="p-1 active:opacity-60">
-            <Ionicons name="share-outline" size={24} color="#22d3ee" />
+            <Ionicons name="share-outline" size={24} color="#0a84ff" />
           </Pressable>
           <Pressable
             onPress={() => router.push({ pathname: "/add-log", params: { scan: "1" } })}
             className="p-1 active:opacity-60">
-            <Ionicons name="camera-outline" size={26} color="#22d3ee" />
+            <Ionicons name="camera-outline" size={26} color="#0a84ff" />
           </Pressable>
         </View>
       </View>
@@ -72,9 +72,7 @@ export default function Logbook() {
           <Pressable
             key={c}
             onPress={() => setFilter(c)}
-            className={`rounded-full border px-3 py-1 ${
-              filter === c ? "border-instrument bg-instrument/15" : "border-flight-700 bg-flight-900"
-            }`}>
+            className={`rounded-lg px-3 py-1 ${filter === c ? "bg-instrument/15" : "bg-flight-900"}`}>
             <Text
               className={`text-xs capitalize ${
                 filter === c ? "font-semibold text-instrument" : "text-flight-300"
@@ -135,11 +133,11 @@ export default function Logbook() {
         )}
       />
 
-      {/* FAB */}
+      {/* New entry button */}
       <Pressable
         onPress={() => router.push("/add-log")}
-        className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-instrument shadow-lg active:opacity-80">
-        <Ionicons name="add" size={30} color="#081226" />
+        className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-2xl bg-instrument active:opacity-80">
+        <Ionicons name="add" size={28} color="#ffffff" />
       </Pressable>
     </Screen>
   );
@@ -148,7 +146,7 @@ export default function Logbook() {
 function Meta({ icon, text, ok }: { icon: any; text: string; ok?: boolean }) {
   return (
     <View className="flex-row items-center gap-1">
-      <Ionicons name={icon} size={13} color={ok ? "#10b981" : "#82abe0"} />
+      <Ionicons name={icon} size={13} color={ok ? "#30d158" : "#98989d"} />
       <Text className={`text-xs ${ok ? "text-ok" : "text-flight-300"}`}>{text}</Text>
     </View>
   );

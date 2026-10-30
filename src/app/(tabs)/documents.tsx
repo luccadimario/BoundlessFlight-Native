@@ -79,7 +79,7 @@ export default function Documents() {
               }>
               <Card className="flex-row items-center gap-3">
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-flight-800">
-                  <Ionicons name={meta.icon} size={20} color="#22d3ee" />
+                  <Ionicons name={meta.icon} size={20} color="#0a84ff" />
                 </View>
                 <View className="flex-1">
                   <Text className="font-semibold text-white" numberOfLines={1}>
@@ -90,7 +90,7 @@ export default function Documents() {
                     {doc.expiresOn !== undefined ? ` · expires ${formatDate(doc.expiresOn)}` : ""}
                   </Text>
                 </View>
-                <Ionicons name="open-outline" size={18} color="#4f83cd" />
+                <Ionicons name="open-outline" size={18} color="#8e8e93" />
               </Card>
             </Pressable>
           );

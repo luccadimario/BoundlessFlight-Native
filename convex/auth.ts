@@ -15,8 +15,16 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     trustedOrigins: ["boundlessflight://"],
     database: authComponent.adapter(ctx),
     emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: false,
+      enabled: false,
+    },
+    socialProviders: {
+      apple: {
+        // Native "Sign in with Apple" verifies the identity token straight
+        // from the device; the audience is the app's own bundle id, not a
+        // separate Services ID, since there's no web OAuth redirect flow.
+        clientId: "com.luccadimario.boundlessflight",
+        appBundleIdentifier: "com.luccadimario.boundlessflight",
+      },
     },
     plugins: [expo(), convex({ authConfig })],
   });

@@ -1,6 +1,6 @@
 # BoundlessFlight ✈️
 
-Maintenance tracking for general-aviation aircraft — logbooks, inspections, ADs, documents, and squawks in one place. Built with Expo (SDK 57), NativeWind v5, and Convex.
+Maintenance tracking for general-aviation aircraft — logbooks, inspections, ADs, documents, and squawks in one place. Built with Expo (SDK 57), NativeWind v4, and Convex.
 
 ## What it does
 
@@ -48,6 +48,6 @@ Without the key everything else works; the scan button reports that OCR isn't co
 
 ## Notes
 
-- NativeWind v5 is a pre-release (`nativewind@preview`); `lightningcss` is pinned to 1.30.1 per its install guide.
+- Styling is NativeWind v4 (stable), not v5 — v5 is still preview software and its `className` styles silently failed to apply at all in EAS release builds (worked fine under `expo start`, broke on-device). If `react-native-css-interop` ever ends up nested under `node_modules/nativewind/node_modules/` instead of hoisted to the top level (check with `npm ls react-native-css-interop`), production exports fail to resolve it — reinstall it explicitly (`npm install react-native-css-interop@<version nativewind expects>`) to force the hoist.
 - Convex Node actions ("use node") need Node 18/20/22/24 installed; this machine runs Node 23, so the OCR action targets Convex's default V8 runtime using `fetch` directly.
 - New aircraft are seeded with the standard inspection set automatically; intervals are editable and items can be untracked (e.g. 100-hour for private-only ops, VOR for VFR-only).

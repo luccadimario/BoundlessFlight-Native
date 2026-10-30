@@ -62,9 +62,9 @@ export default function CompleteInspection() {
       <Field label="Date completed (YYYY-MM-DD)" value={date} onChangeText={setDate} autoCapitalize="none" />
       <Field label="Tach at completion" value={tach} onChangeText={setTach} keyboardType="decimal-pad" />
 
-      <View className="flex-row items-center justify-between rounded-xl border border-flight-700 bg-flight-800 px-3 py-3">
+      <View className="flex-row items-center justify-between rounded-xl bg-flight-800 px-3 py-3">
         <Text className="flex-1 pr-2 text-base text-white">Also write a logbook entry</Text>
-        <Switch value={createLogEntry} onValueChange={setCreateLogEntry} trackColor={{ true: "#22d3ee" }} />
+        <Switch value={createLogEntry} onValueChange={setCreateLogEntry} trackColor={{ true: "#0a84ff" }} />
       </View>
 
       {createLogEntry && (

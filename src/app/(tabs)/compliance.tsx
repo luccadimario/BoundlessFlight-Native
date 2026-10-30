@@ -81,10 +81,10 @@ export default function Compliance() {
         <SectionTitle>Airworthiness Directives</SectionTitle>
         <View className="flex-row items-center gap-3">
           <Pressable onPress={() => router.push("/import-ads")} className="active:opacity-60">
-            <Ionicons name="cloud-download-outline" size={24} color="#22d3ee" />
+            <Ionicons name="cloud-download-outline" size={24} color="#0a84ff" />
           </Pressable>
           <Pressable onPress={() => router.push("/add-ad")} className="active:opacity-60">
-            <Ionicons name="add-circle-outline" size={24} color="#22d3ee" />
+            <Ionicons name="add-circle-outline" size={24} color="#0a84ff" />
           </Pressable>
         </View>
       </View>

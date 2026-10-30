@@ -142,7 +142,8 @@ export default function AddLog() {
     <Screen>
       <Card className="gap-1">
         <Button
-          label={scanning ? "Transcribing…" : "📷 Scan a logbook page"}
+          label={scanning ? "Transcribing…" : "Scan a logbook page"}
+          icon="camera-outline"
           variant="secondary"
           loading={scanning}
           onPress={() => void startScan()}
@@ -179,9 +180,9 @@ export default function AddLog() {
       />
       {certNumber.trim() !== "" && <ChipRow options={CERT_TYPES} value={certType} onChange={setCertType} />}
 
-      <View className="flex-row items-center justify-between rounded-xl border border-flight-700 bg-flight-800 px-3 py-3">
+      <View className="flex-row items-center justify-between rounded-xl bg-flight-800 px-3 py-3">
         <Text className="text-base text-white">Approved for return to service</Text>
-        <Switch value={returnToService} onValueChange={setReturnToService} trackColor={{ true: "#22d3ee" }} />
+        <Switch value={returnToService} onValueChange={setReturnToService} trackColor={{ true: "#0a84ff" }} />
       </View>
 
       <Button label="Save Entry" onPress={() => void save()} loading={saving} />
