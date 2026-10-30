@@ -1,12 +1,12 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { certificateType, logCategory, logEntryType } from "./schema";
 import { requireAircraft } from "./helpers";
 
 export const listByAircraft = query({
   args: { aircraftId: v.id("aircraft") },
   handler: async (ctx, { aircraftId }) => {
-    await requireAircraft(ctx, aircraftId);
+    await requireAircraft(ctx, aircraftId, "read");
     const entries = await ctx.db
       .query("logEntries")
       .withIndex("by_aircraft_date", (q) => q.eq("aircraftId", aircraftId))
@@ -41,8 +41,8 @@ export const create = mutation({
     source: v.union(v.literal("manual"), v.literal("ocr")),
   },
   handler: async (ctx, args) => {
-    await requireAircraft(ctx, args.aircraftId);
-    const id = await ctx.db.insert("logEntries", args);
+    const aircraft = await requireAircraft(ctx, args.aircraftId, "write");
+    const id = await ctx.db.insert("logEntries", { ...args, createdBy: aircraft.callerId });
     // Keep the aircraft's running tach current if this entry is newer
     if (args.tachTime !== undefined) {
       const aircraft = await ctx.db.get(args.aircraftId);
@@ -54,15 +54,21 @@ export const create = mutation({
   },
 });
 
-export const remove = mutation({
-  args: { id: v.id("logEntries") },
-  handler: async (ctx, { id }) => {
+// Entries are append-only: a mistake is voided (kept, struck through, with a
+// reason) rather than deleted, so the record stays trustworthy for a buyer or
+// inspector. Correct it by adding a new entry.
+export const voidEntry = mutation({
+  args: { id: v.id("logEntries"), reason: v.string() },
+  handler: async (ctx, { id, reason }) => {
     const entry = await ctx.db.get(id);
-    if (!entry) return;
-    await requireAircraft(ctx, entry.aircraftId);
-    for (const storageId of entry.attachmentIds) {
-      await ctx.storage.delete(storageId);
-    }
-    await ctx.db.delete(id);
+    if (!entry) throw new ConvexError("Entry not found");
+    const aircraft = await requireAircraft(ctx, entry.aircraftId, "write");
+    if (entry.voidedAt !== undefined) return;
+    if (!reason.trim()) throw new ConvexError("A reason is required to void an entry.");
+    await ctx.db.patch(id, {
+      voidedAt: Date.now(),
+      voidedBy: aircraft.callerId,
+      voidReason: reason.trim(),
+    });
   },
 });

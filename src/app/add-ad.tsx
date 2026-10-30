@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 
 import { api } from "../../convex/_generated/api";
 import { useAircraft } from "@/lib/aircraft-context";
+import { parseDateInput } from "@/lib/currency";
 import { Button, ChipRow, Field, Screen } from "@/components/ui";
 
 const STATUSES = ["open", "complied", "recurring", "not_applicable"] as const;
@@ -30,8 +31,8 @@ export default function AddAd() {
       Alert.alert("Missing info", "AD number and title are required.");
       return;
     }
-    const parsedDate = complianceDate.trim() ? Date.parse(complianceDate) : undefined;
-    if (complianceDate.trim() && Number.isNaN(parsedDate)) {
+    const parsedDate = complianceDate.trim() ? parseDateInput(complianceDate) : undefined;
+    if (complianceDate.trim() && parsedDate === null) {
       Alert.alert("Invalid date", "Use YYYY-MM-DD for the compliance date.");
       return;
     }
@@ -44,7 +45,7 @@ export default function AddAd() {
         appliesTo: appliesTo.trim() || undefined,
         status,
         methodOfCompliance: moc.trim() || undefined,
-        complianceDate: parsedDate,
+        complianceDate: parsedDate ?? undefined,
         complianceTach: complianceTach.trim() ? parseFloat(complianceTach) : undefined,
         recurringIntervalHours: intervalHours.trim() ? parseFloat(intervalHours) : undefined,
         recurringIntervalMonths: intervalMonths.trim() ? parseFloat(intervalMonths) : undefined,

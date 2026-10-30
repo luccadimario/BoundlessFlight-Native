@@ -94,6 +94,23 @@ export function adDue(
   return combine(dueDate, dueTach, currentTach, now);
 }
 
+// Form dates are typed as YYYY-MM-DD. Date.parse treats that as UTC midnight,
+// which is the previous evening in US time zones — so parse as local noon.
+export function parseDateInput(input: string): number | null {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(input.trim());
+  if (!m) return null;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(year, month - 1, day, 12);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return d.getTime();
+}
+
+// Today's local date as YYYY-MM-DD (toISOString would give the UTC date)
+export function todayInput(now: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 export function formatDate(ms?: number): string {
   if (ms === undefined) return "—";
   return new Date(ms).toLocaleDateString("en-US", {

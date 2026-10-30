@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useAircraft } from "@/lib/aircraft-context";
+import { parseDateInput, todayInput } from "@/lib/currency";
 import { Button, Card, Field, LoadingScreen, Screen } from "@/components/ui";
 
 export default function CompleteInspection() {
@@ -19,7 +20,7 @@ export default function CompleteInspection() {
 
   const inspection = inspections?.find((i) => i._id === inspectionId);
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayInput());
   const [tach, setTach] = useState(current?.currentTach.toString() ?? "");
   const [createLogEntry, setCreateLogEntry] = useState(true);
   const [performedBy, setPerformedBy] = useState("");
@@ -29,8 +30,8 @@ export default function CompleteInspection() {
   if (!inspection) return <LoadingScreen />;
 
   async function save() {
-    const parsedDate = Date.parse(date);
-    if (Number.isNaN(parsedDate)) {
+    const parsedDate = parseDateInput(date);
+    if (parsedDate === null) {
       Alert.alert("Invalid date", "Use YYYY-MM-DD format.");
       return;
     }

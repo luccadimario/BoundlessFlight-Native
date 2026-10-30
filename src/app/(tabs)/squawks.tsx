@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
 import { useAircraft } from "@/lib/aircraft-context";
+import { errorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/currency";
 import { Button, Card, ChipRow, EmptyState, Field, LoadingScreen, Screen, SectionTitle, Title } from "@/components/ui";
 
@@ -16,7 +17,7 @@ const SEVERITY_STYLES: Record<string, string> = {
 };
 
 export default function Squawks() {
-  const { current, isLoading } = useAircraft();
+  const { current, isLoading, canWrite } = useAircraft();
   const squawks = useQuery(
     api.squawks.listByAircraft,
     current ? { aircraftId: current._id } : "skip",
@@ -42,7 +43,12 @@ export default function Squawks() {
 
   const submit = async () => {
     if (!description.trim()) return;
-    await createSquawk({ aircraftId: current._id, description: description.trim(), severity });
+    try {
+      await createSquawk({ aircraftId: current._id, description: description.trim(), severity });
+    } catch (err) {
+      Alert.alert("Couldn't add squawk", errorMessage(err));
+      return;
+    }
     setDescription("");
     setSeverity("monitor");
   };
@@ -76,6 +82,7 @@ export default function Squawks() {
               <Text className="text-xs text-flight-400">{formatDate(s._creationTime)}</Text>
             </View>
             <Text className="mt-1 text-sm text-white">{s.description}</Text>
+            {canWrite && (
             <Pressable
               onPress={() =>
                 Alert.alert("Resolve squawk", "Mark this squawk as resolved?", [
@@ -86,6 +93,7 @@ export default function Squawks() {
               className="mt-2 self-start active:opacity-60">
               <Text className="text-sm font-semibold text-ok">Mark resolved</Text>
             </Pressable>
+            )}
           </Card>
         ))
       )}

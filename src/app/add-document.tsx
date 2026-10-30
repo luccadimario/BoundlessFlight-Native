@@ -8,6 +8,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAircraft } from "@/lib/aircraft-context";
 import { uploadToConvex } from "@/lib/upload";
+import { parseDateInput } from "@/lib/currency";
 import { Button, Card, ChipRow, Field, Screen } from "@/components/ui";
 
 const KINDS = [
@@ -73,8 +74,8 @@ export default function AddDocument() {
       Alert.alert("Missing title", "Give this document a name.");
       return;
     }
-    const parsedExpiry = expires.trim() ? Date.parse(expires) : undefined;
-    if (expires.trim() && Number.isNaN(parsedExpiry)) {
+    const parsedExpiry = expires.trim() ? parseDateInput(expires) : undefined;
+    if (expires.trim() && parsedExpiry === null) {
       Alert.alert("Invalid date", "Use YYYY-MM-DD for the expiration date.");
       return;
     }
@@ -88,7 +89,7 @@ export default function AddDocument() {
         title: title.trim(),
         storageId,
         mimeType: picked.mimeType,
-        expiresOn: parsedExpiry,
+        expiresOn: parsedExpiry ?? undefined,
       });
       router.back();
     } catch (err) {

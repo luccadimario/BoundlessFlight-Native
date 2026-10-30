@@ -24,7 +24,7 @@ export const generateUploadUrl = mutation({
 export const listByAircraft = query({
   args: { aircraftId: v.id("aircraft") },
   handler: async (ctx, { aircraftId }) => {
-    await requireAircraft(ctx, aircraftId);
+    await requireAircraft(ctx, aircraftId, "read");
     const docs = await ctx.db
       .query("documents")
       .withIndex("by_aircraft", (q) => q.eq("aircraftId", aircraftId))
@@ -50,7 +50,7 @@ export const create = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAircraft(ctx, args.aircraftId);
+    await requireAircraft(ctx, args.aircraftId, "write");
     return await ctx.db.insert("documents", args);
   },
 });
@@ -60,7 +60,7 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     const doc = await ctx.db.get(id);
     if (!doc) return;
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "owner");
     await ctx.storage.delete(doc.storageId);
     await ctx.db.delete(id);
   },

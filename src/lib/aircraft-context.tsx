@@ -3,9 +3,14 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 
+export type Role = "owner" | "mechanic" | "viewer";
+export type FleetAircraft = Doc<"aircraft"> & { role: Role };
+
 type AircraftContextValue = {
-  fleet: Doc<"aircraft">[] | undefined;
-  current: Doc<"aircraft"> | null;
+  fleet: FleetAircraft[] | undefined;
+  current: FleetAircraft | null;
+  isOwner: boolean;
+  canWrite: boolean;
   setAircraftId: (id: Id<"aircraft">) => void;
   isLoading: boolean;
 };
@@ -13,6 +18,8 @@ type AircraftContextValue = {
 const AircraftContext = createContext<AircraftContextValue>({
   fleet: undefined,
   current: null,
+  isOwner: false,
+  canWrite: false,
   setAircraftId: () => {},
   isLoading: true,
 });
@@ -29,6 +36,8 @@ export function AircraftProvider({ children }: { children: ReactNode }) {
       value={{
         fleet,
         current,
+        isOwner: current?.role === "owner",
+        canWrite: current?.role === "owner" || current?.role === "mechanic",
         setAircraftId: setSelectedId,
         isLoading: fleet === undefined,
       }}>

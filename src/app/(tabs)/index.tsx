@@ -10,7 +10,7 @@ import { adDue, dueLabel, inspectionDue, type DueInfo } from "@/lib/currency";
 import { Button, Card, EmptyState, LoadingScreen, Screen, SectionTitle, StatusBadge, Title } from "@/components/ui";
 
 export default function Dashboard() {
-  const { fleet, current, setAircraftId, isLoading } = useAircraft();
+  const { fleet, current, setAircraftId, isLoading, isOwner, canWrite } = useAircraft();
 
   const inspections = useQuery(
     api.inspections.listByAircraft,
@@ -39,6 +39,15 @@ export default function Dashboard() {
           hint="Add your aircraft to start tracking its maintenance and airworthiness."
         />
         <Button label="Add Aircraft" onPress={() => router.push("/add-aircraft")} />
+        <Button
+          label="Join with Invite Code"
+          icon="key-outline"
+          variant="secondary"
+          onPress={() => router.push("/join-aircraft")}
+        />
+        <Text className="text-center text-xs text-flight-400">
+          Mechanic or co-owner? Ask the aircraft owner for an invite code.
+        </Text>
       </Screen>
     );
   }
@@ -73,6 +82,9 @@ export default function Dashboard() {
       <View className="flex-row items-center justify-between">
         <Title>BoundlessFlight</Title>
         <View className="flex-row items-center gap-3">
+          <Pressable onPress={() => router.push("/share-aircraft")} className="p-1 active:opacity-60">
+            <Ionicons name="people-outline" size={27} color="#0a84ff" />
+          </Pressable>
           <Pressable onPress={() => router.push("/add-aircraft")} className="p-1 active:opacity-60">
             <Ionicons name="add-circle-outline" size={28} color="#0a84ff" />
           </Pressable>
@@ -115,6 +127,11 @@ export default function Dashboard() {
           {current.year ? `${current.year} ` : ""}
           {current.make} {current.model} · {current.tailNumber}
         </Text>
+        {!isOwner && (
+          <Text className="mt-1 text-xs font-semibold uppercase tracking-wider text-instrument">
+            Shared with you · {current.role === "mechanic" ? "Mechanic access" : "View only"}
+          </Text>
+        )}
         <View className="mt-3 flex-row gap-4">
           <Stat label="Overdue" value={overdue.length} tone={overdue.length ? "text-warning" : "text-flight-300"} />
           <Stat label="Due soon" value={dueSoon.length} tone={dueSoon.length ? "text-caution" : "text-flight-300"} />
@@ -131,9 +148,11 @@ export default function Dashboard() {
       <Card>
         <View className="flex-row items-center justify-between">
           <SectionTitle>Times</SectionTitle>
-          <Pressable onPress={() => router.push("/update-times")} className="active:opacity-60">
-            <Text className="text-sm font-semibold text-instrument">Update</Text>
-          </Pressable>
+          {isOwner && (
+            <Pressable onPress={() => router.push("/update-times")} className="active:opacity-60">
+              <Text className="text-sm font-semibold text-instrument">Update</Text>
+            </Pressable>
+          )}
         </View>
         <View className="mt-2 flex-row gap-6">
           <Stat label="Tach" value={current.currentTach.toFixed(1)} tone="text-white" big />
@@ -167,6 +186,8 @@ export default function Dashboard() {
       )}
 
       {/* Quick actions */}
+      {canWrite && (
+        <>
       <SectionTitle>Quick actions</SectionTitle>
       <View className="flex-row gap-3">
         <View className="flex-1">
@@ -191,6 +212,8 @@ export default function Dashboard() {
         variant="secondary"
         onPress={() => router.push("/add-document")}
       />
+        </>
+      )}
     </Screen>
   );
 }

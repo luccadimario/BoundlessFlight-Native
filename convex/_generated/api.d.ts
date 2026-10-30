@@ -18,6 +18,7 @@ import type * as http from "../http.js";
 import type * as inspections from "../inspections.js";
 import type * as logEntries from "../logEntries.js";
 import type * as ocr from "../ocr.js";
+import type * as sharing from "../sharing.js";
 import type * as squawks from "../squawks.js";
 
 import type {
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   inspections: typeof inspections;
   logEntries: typeof logEntries;
   ocr: typeof ocr;
+  sharing: typeof sharing;
   squawks: typeof squawks;
 }>;
 

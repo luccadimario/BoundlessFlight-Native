@@ -61,6 +61,8 @@ export default function RootLayout() {
                 options={{ ...modalOptions, title: "Record Inspection" }}
               />
               <Stack.Screen name="update-times" options={{ ...modalOptions, title: "Update Times" }} />
+              <Stack.Screen name="share-aircraft" options={{ ...modalOptions, title: "Sharing" }} />
+              <Stack.Screen name="join-aircraft" options={{ ...modalOptions, title: "Join an Aircraft" }} />
             </Stack>
           </AircraftProvider>
         </Authenticated>

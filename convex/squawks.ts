@@ -5,7 +5,7 @@ import { requireAircraft } from "./helpers";
 export const listByAircraft = query({
   args: { aircraftId: v.id("aircraft") },
   handler: async (ctx, { aircraftId }) => {
-    await requireAircraft(ctx, aircraftId);
+    await requireAircraft(ctx, aircraftId, "read");
     return await ctx.db
       .query("squawks")
       .withIndex("by_aircraft", (q) => q.eq("aircraftId", aircraftId))
@@ -25,7 +25,8 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    await requireAircraft(ctx, args.aircraftId);
+    // Any pilot on the aircraft can report a problem; resolving takes write access
+    await requireAircraft(ctx, args.aircraftId, "read");
     return await ctx.db.insert("squawks", { ...args, status: "open" });
   },
 });
@@ -38,7 +39,7 @@ export const resolve = mutation({
   handler: async (ctx, { id, resolutionNotes }) => {
     const doc = await ctx.db.get(id);
     if (!doc) throw new Error("Squawk not found");
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "write");
     await ctx.db.patch(id, {
       status: "resolved",
       resolvedAt: Date.now(),
@@ -52,7 +53,7 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     const doc = await ctx.db.get(id);
     if (!doc) return;
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "owner");
     await ctx.db.delete(id);
   },
 });

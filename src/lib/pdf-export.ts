@@ -24,7 +24,11 @@ function entryRows(entries: Entry[]): string {
         <td class="nowrap">${formatDate(e.date)}</td>
         <td class="nowrap">${e.tachTime !== undefined ? e.tachTime.toFixed(1) : "—"}</td>
         <td class="nowrap">${e.entryType}</td>
-        <td>${escapeHtml(e.description)}</td>
+        <td>${
+          e.voidedAt !== undefined
+            ? `<s>${escapeHtml(e.description)}</s><br/><b>VOIDED ${formatDate(e.voidedAt)}:</b> ${escapeHtml(e.voidReason ?? "")}`
+            : escapeHtml(e.description)
+        }</td>
         <td class="nowrap">${
           [e.performedBy, e.certificateType, e.certificateNumber]
             .filter((part): part is string => Boolean(part))

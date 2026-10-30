@@ -121,10 +121,13 @@ export const parseLogbookImage = action({
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-8",
-        max_tokens: 16000,
+        // Haiku keeps a scan well under a cent; the app downsizes photos to
+        // <=1568px JPEG before upload, which is also the model's native size.
+        model: "claude-haiku-5-5",
+        max_tokens: 8000,
         thinking: { type: "adaptive" },
         output_config: {
+          effort: "medium",
           format: {
             type: "json_schema",
             schema: ENTRY_SCHEMA,
@@ -167,6 +170,9 @@ export const parseLogbookImage = action({
       content: Array<{ type: string; text?: string }>;
     };
 
+    if (response.stop_reason === "max_tokens") {
+      return { ok: false, error: "OCR output was cut off. Try a tighter photo of one entry." };
+    }
     if (response.stop_reason === "refusal") {
       return { ok: false, error: "The OCR model declined to process this image." };
     }

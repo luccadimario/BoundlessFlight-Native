@@ -12,7 +12,7 @@ const adStatus = v.union(
 export const listByAircraft = query({
   args: { aircraftId: v.id("aircraft") },
   handler: async (ctx, { aircraftId }) => {
-    await requireAircraft(ctx, aircraftId);
+    await requireAircraft(ctx, aircraftId, "read");
     return await ctx.db
       .query("airworthinessDirectives")
       .withIndex("by_aircraft", (q) => q.eq("aircraftId", aircraftId))
@@ -35,7 +35,7 @@ export const create = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAircraft(ctx, args.aircraftId);
+    await requireAircraft(ctx, args.aircraftId, "write");
     return await ctx.db.insert("airworthinessDirectives", args);
   },
 });
@@ -57,7 +57,7 @@ export const update = mutation({
   handler: async (ctx, { id, ...fields }) => {
     const doc = await ctx.db.get(id);
     if (!doc) throw new Error("AD not found");
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "write");
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, val]) => val !== undefined),
     );
@@ -70,7 +70,7 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     const doc = await ctx.db.get(id);
     if (!doc) return;
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "owner");
     await ctx.db.delete(id);
   },
 });

@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireAircraft, requireUserId } from "./helpers";
+import { requireAircraft, requireUserId, type Role } from "./helpers";
 
 // Default inspection set seeded for every new aircraft (AV1ATE + ownership items)
 const DEFAULT_INSPECTIONS: Array<{
@@ -35,17 +35,31 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const userId = await requireUserId(ctx);
-    return await ctx.db
+    const owned = await ctx.db
       .query("aircraft")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
+    const memberships = await ctx.db
+      .query("aircraftMembers")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    const shared = await Promise.all(
+      memberships.map(async (m) => {
+        const aircraft = await ctx.db.get(m.aircraftId);
+        return aircraft ? { ...aircraft, role: m.role as Role } : null;
+      }),
+    );
+    return [
+      ...owned.map((a) => ({ ...a, role: "owner" as Role })),
+      ...shared.filter((a) => a !== null),
+    ];
   },
 });
 
 export const get = query({
   args: { id: v.id("aircraft") },
   handler: async (ctx, { id }) => {
-    return await requireAircraft(ctx, id);
+    return await requireAircraft(ctx, id, "read");
   },
 });
 
@@ -94,7 +108,7 @@ export const update = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...fields }) => {
-    await requireAircraft(ctx, id);
+    await requireAircraft(ctx, id, "owner");
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, val]) => val !== undefined),
     );
@@ -105,7 +119,7 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("aircraft") },
   handler: async (ctx, { id }) => {
-    await requireAircraft(ctx, id);
+    await requireAircraft(ctx, id, "owner");
     const tables = [
       "logEntries",
       "inspections",
@@ -117,6 +131,13 @@ export const remove = mutation({
       const rows = await ctx.db
         .query(table)
         .withIndex("by_aircraft", (q) => q.eq("aircraftId", id))
+        .collect();
+      for (const row of rows) await ctx.db.delete(row._id);
+    }
+    for (const table of ["aircraftMembers", "aircraftInvites"] as const) {
+      const rows = await ctx.db
+        .query(table)
+        .withIndex("by_aircraftId", (q) => q.eq("aircraftId", id))
         .collect();
       for (const row of rows) await ctx.db.delete(row._id);
     }

@@ -6,7 +6,7 @@ import { requireAircraft } from "./helpers";
 export const listByAircraft = query({
   args: { aircraftId: v.id("aircraft") },
   handler: async (ctx, { aircraftId }) => {
-    await requireAircraft(ctx, aircraftId);
+    await requireAircraft(ctx, aircraftId, "read");
     return await ctx.db
       .query("inspections")
       .withIndex("by_aircraft", (q) => q.eq("aircraftId", aircraftId))
@@ -25,7 +25,7 @@ export const create = mutation({
     tracked: v.boolean(),
   },
   handler: async (ctx, args) => {
-    await requireAircraft(ctx, args.aircraftId);
+    await requireAircraft(ctx, args.aircraftId, "owner");
     return await ctx.db.insert("inspections", args);
   },
 });
@@ -43,7 +43,7 @@ export const update = mutation({
   handler: async (ctx, { id, ...fields }) => {
     const doc = await ctx.db.get(id);
     if (!doc) throw new Error("Inspection not found");
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "owner");
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, val]) => val !== undefined),
     );
@@ -64,7 +64,7 @@ export const complete = mutation({
   handler: async (ctx, args) => {
     const inspection = await ctx.db.get(args.id);
     if (!inspection) throw new Error("Inspection not found");
-    await requireAircraft(ctx, inspection.aircraftId);
+    const aircraft = await requireAircraft(ctx, inspection.aircraftId, "write");
     await ctx.db.patch(args.id, {
       lastDoneDate: args.date,
       lastDoneTach: args.tach,
@@ -83,6 +83,7 @@ export const complete = mutation({
         returnToService: true,
         attachmentIds: [],
         source: "manual",
+        createdBy: aircraft.callerId,
       });
     }
   },
@@ -93,7 +94,7 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     const doc = await ctx.db.get(id);
     if (!doc) return;
-    await requireAircraft(ctx, doc.aircraftId);
+    await requireAircraft(ctx, doc.aircraftId, "owner");
     await ctx.db.delete(id);
   },
 });

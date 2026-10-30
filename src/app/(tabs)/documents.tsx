@@ -23,7 +23,7 @@ const KIND_META: Record<string, { label: string; icon: any }> = {
 const ARROW_KINDS = ["airworthiness_certificate", "registration", "poh_afm", "weight_and_balance"];
 
 export default function Documents() {
-  const { current, isLoading } = useAircraft();
+  const { current, isLoading, isOwner, canWrite } = useAircraft();
   const docs = useQuery(
     api.documents.listByAircraft,
     current ? { aircraftId: current._id } : "skip",
@@ -56,7 +56,7 @@ export default function Documents() {
         </Card>
       )}
 
-      <Button label="Upload Document" onPress={() => router.push("/add-document")} />
+      {canWrite && <Button label="Upload Document" onPress={() => router.push("/add-document")} />}
 
       <SectionTitle>On file</SectionTitle>
       {(docs ?? []).length === 0 ? (
@@ -72,6 +72,7 @@ export default function Documents() {
               key={doc._id}
               onPress={() => doc.url && Linking.openURL(doc.url)}
               onLongPress={() =>
+                isOwner &&
                 Alert.alert("Delete document", `Remove "${doc.title}"?`, [
                   { text: "Cancel", style: "cancel" },
                   { text: "Delete", style: "destructive", onPress: () => removeDoc({ id: doc._id }) },

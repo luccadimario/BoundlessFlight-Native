@@ -2,17 +2,35 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Image, Pressable, Switch, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { useAction, useMutation } from "convex/react";
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useAircraft } from "@/lib/aircraft-context";
 import { uploadToConvex } from "@/lib/upload";
+import { errorMessage } from "@/lib/errors";
+import { parseDateInput, todayInput } from "@/lib/currency";
 import { Button, Card, ChipRow, Field, Screen } from "@/components/ui";
 
 const CATEGORIES = ["airframe", "engine", "propeller", "avionics", "other"] as const;
 const ENTRY_TYPES = ["maintenance", "inspection", "alteration", "preventive", "overhaul"] as const;
 const CERT_TYPES = ["A&P", "IA", "repair_station", "owner", "other"] as const;
+
+// Claude reads images at up to ~1568px on the long edge and rejects anything over
+// 5MB or in HEIC (the iPhone library default), so normalize every scan to a
+// right-sized JPEG before upload. Smaller images also mean fewer input tokens.
+const MAX_SCAN_EDGE = 1568;
+
+async function prepareScan(asset: ImagePicker.ImagePickerAsset): Promise<string> {
+  const context = ImageManipulator.manipulate(asset.uri);
+  if (Math.max(asset.width, asset.height) > MAX_SCAN_EDGE) {
+    context.resize(asset.width >= asset.height ? { width: MAX_SCAN_EDGE } : { height: MAX_SCAN_EDGE });
+  }
+  const image = await context.renderAsync();
+  const result = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.8 });
+  return result.uri;
+}
 
 export default function AddLog() {
   const { scan } = useLocalSearchParams<{ scan?: string }>();
@@ -22,7 +40,7 @@ export default function AddLog() {
   const parseImage = useAction(api.ocr.parseLogbookImage);
   const createEntry = useMutation(api.logEntries.create);
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayInput());
   const [tach, setTach] = useState(current?.currentTach.toString() ?? "");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("airframe");
   const [entryType, setEntryType] = useState<(typeof ENTRY_TYPES)[number]>("maintenance");
@@ -73,9 +91,9 @@ export default function AddLog() {
       setOcrNote(null);
       setPreviewUri(asset.uri);
 
-      const mimeType = asset.mimeType ?? "image/jpeg";
+      const scanUri = await prepareScan(asset);
       const uploadUrl = await generateUploadUrl();
-      const storageId = await uploadToConvex(uploadUrl, asset.uri, mimeType);
+      const storageId = await uploadToConvex(uploadUrl, scanUri, "image/jpeg");
       setAttachmentIds((prev) => [...prev, storageId]);
 
       const parsed = await parseImage({ storageId });
@@ -99,7 +117,7 @@ export default function AddLog() {
           : `Transcribed with ${entry.confidence} confidence — double-check every field.`,
       );
     } catch (err) {
-      setOcrNote(err instanceof Error ? err.message : "Scan failed.");
+      setOcrNote(errorMessage(err, err instanceof Error ? err.message : "Scan failed."));
     } finally {
       setScanning(false);
     }
@@ -107,8 +125,8 @@ export default function AddLog() {
 
   async function save() {
     if (!current) return;
-    const parsedDate = Date.parse(date);
-    if (Number.isNaN(parsedDate)) {
+    const parsedDate = parseDateInput(date);
+    if (parsedDate === null) {
       Alert.alert("Invalid date", "Use YYYY-MM-DD format.");
       return;
     }
@@ -133,6 +151,8 @@ export default function AddLog() {
         source: previewUri ? "ocr" : "manual",
       });
       router.back();
+    } catch (err) {
+      Alert.alert("Couldn't save entry", errorMessage(err));
     } finally {
       setSaving(false);
     }

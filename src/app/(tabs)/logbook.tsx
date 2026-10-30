@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, FlatList, Image, Pressable, Text, View } from "react-native";
+import { Alert, FlatList, Image, Platform, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useMutation, useQuery } from "convex/react";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -7,6 +7,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useAircraft } from "@/lib/aircraft-context";
+import { errorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/currency";
 import { exportLogbookPdf } from "@/lib/pdf-export";
 import { Card, EmptyState, LoadingScreen, Screen, Title } from "@/components/ui";
@@ -14,13 +15,13 @@ import { Card, EmptyState, LoadingScreen, Screen, Title } from "@/components/ui"
 const CATEGORIES = ["all", "airframe", "engine", "propeller", "avionics", "other"] as const;
 
 export default function Logbook() {
-  const { current, isLoading } = useAircraft();
+  const { current, isLoading, canWrite } = useAircraft();
   const [filter, setFilter] = useState<(typeof CATEGORIES)[number]>("all");
   const entries = useQuery(
     api.logEntries.listByAircraft,
     current ? { aircraftId: current._id } : "skip",
   );
-  const removeEntry = useMutation(api.logEntries.remove);
+  const voidEntry = useMutation(api.logEntries.voidEntry);
 
   if (isLoading) return <LoadingScreen />;
   if (!current) {
@@ -34,11 +35,33 @@ export default function Logbook() {
 
   const filtered = (entries ?? []).filter((e) => filter === "all" || e.category === filter);
 
-  const confirmDelete = (id: Id<"logEntries">) => {
-    Alert.alert("Delete entry", "Remove this log entry and its attachments?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => removeEntry({ id }) },
-    ]);
+  const runVoid = (id: Id<"logEntries">, reason: string) => {
+    voidEntry({ id, reason }).catch((err: unknown) =>
+      Alert.alert("Couldn't void entry", errorMessage(err)),
+    );
+  };
+
+  // Entries are never deleted — voiding keeps them in the record with a reason
+  const confirmVoid = (id: Id<"logEntries">) => {
+    const message =
+      "The entry stays in the logbook, struck through, with your reason. Add a new entry with the correction.";
+    if (Platform.OS === "ios") {
+      Alert.prompt(
+        "Void entry",
+        message,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Void", style: "destructive", onPress: (reason?: string) => runVoid(id, reason || "Entered in error") },
+        ],
+        "plain-text",
+        "Entered in error",
+      );
+    } else {
+      Alert.alert("Void entry", message, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Void", style: "destructive", onPress: () => runVoid(id, "Entered in error") },
+      ]);
+    }
   };
 
   return (
@@ -53,17 +76,19 @@ export default function Logbook() {
                 return;
               }
               void exportLogbookPdf(current, entries).catch((err: unknown) =>
-                Alert.alert("Export failed", err instanceof Error ? err.message : "Try again."),
+                Alert.alert("Export failed", errorMessage(err)),
               );
             }}
             className="p-1 active:opacity-60">
             <Ionicons name="share-outline" size={24} color="#0a84ff" />
           </Pressable>
-          <Pressable
-            onPress={() => router.push({ pathname: "/add-log", params: { scan: "1" } })}
-            className="p-1 active:opacity-60">
-            <Ionicons name="camera-outline" size={26} color="#0a84ff" />
-          </Pressable>
+          {canWrite && (
+            <Pressable
+              onPress={() => router.push({ pathname: "/add-log", params: { scan: "1" } })}
+              className="p-1 active:opacity-60">
+              <Ionicons name="camera-outline" size={26} color="#0a84ff" />
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -94,15 +119,25 @@ export default function Logbook() {
           />
         }
         renderItem={({ item }) => (
-          <Pressable onLongPress={() => confirmDelete(item._id)}>
-            <Card>
+          <Pressable
+            disabled={!canWrite || item.voidedAt !== undefined}
+            onLongPress={() => confirmVoid(item._id)}>
+            <Card className={item.voidedAt !== undefined ? "opacity-50" : undefined}>
               <View className="flex-row items-center justify-between">
                 <Text className="text-xs font-bold uppercase tracking-wider text-instrument">
                   {item.category} · {item.entryType}
                 </Text>
                 <Text className="text-xs text-flight-400">{formatDate(item.date)}</Text>
               </View>
-              <Text className="mt-2 text-sm leading-5 text-white">{item.description}</Text>
+              <Text
+                className={`mt-2 text-sm leading-5 text-white ${item.voidedAt !== undefined ? "line-through" : ""}`}>
+                {item.description}
+              </Text>
+              {item.voidedAt !== undefined && (
+                <Text className="mt-1 text-xs font-semibold text-warning">
+                  VOIDED {formatDate(item.voidedAt)} · {item.voidReason}
+                </Text>
+              )}
               <View className="mt-3 flex-row flex-wrap items-center gap-x-4 gap-y-1">
                 {item.tachTime !== undefined && (
                   <Meta icon="time-outline" text={`Tach ${item.tachTime.toFixed(1)}`} />
@@ -134,11 +169,13 @@ export default function Logbook() {
       />
 
       {/* New entry button */}
-      <Pressable
-        onPress={() => router.push("/add-log")}
-        className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-2xl bg-instrument active:opacity-80">
-        <Ionicons name="add" size={28} color="#ffffff" />
-      </Pressable>
+      {canWrite && (
+        <Pressable
+          onPress={() => router.push("/add-log")}
+          className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-2xl bg-instrument active:opacity-80">
+          <Ionicons name="add" size={28} color="#ffffff" />
+        </Pressable>
+      )}
     </Screen>
   );
 }

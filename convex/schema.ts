@@ -39,6 +39,9 @@ export const inspectionType = v.union(
   v.literal("custom"),
 );
 
+// Owner is implied by aircraft.userId; members are people the owner shared with
+export const memberRole = v.union(v.literal("mechanic"), v.literal("viewer"));
+
 export default defineSchema({
   aircraft: defineTable({
     userId: v.string(), // Better Auth user id — owner of this aircraft
@@ -76,6 +79,12 @@ export default defineSchema({
     returnToService: v.boolean(),
     attachmentIds: v.array(v.id("_storage")), // scanned pages / photos
     source: v.union(v.literal("manual"), v.literal("ocr")),
+    createdBy: v.optional(v.string()), // Better Auth user id of whoever entered it
+    // Entries are never deleted — a mistaken entry is voided with a reason and
+    // stays in the record, so the logbook keeps an honest audit trail.
+    voidedAt: v.optional(v.number()),
+    voidedBy: v.optional(v.string()),
+    voidReason: v.optional(v.string()),
   })
     .index("by_aircraft", ["aircraftId"])
     .index("by_aircraft_date", ["aircraftId", "date"]),
@@ -132,6 +141,28 @@ export default defineSchema({
     expiresOn: v.optional(v.number()), // registration / insurance expiry
     notes: v.optional(v.string()),
   }).index("by_aircraft", ["aircraftId"]),
+
+  aircraftMembers: defineTable({
+    aircraftId: v.id("aircraft"),
+    userId: v.string(),
+    role: memberRole,
+    displayName: v.string(),
+  })
+    .index("by_aircraftId", ["aircraftId"])
+    .index("by_userId", ["userId"])
+    .index("by_aircraftId_and_userId", ["aircraftId", "userId"]),
+
+  // Single-use codes an owner hands to a mechanic / co-owner to join an aircraft
+  aircraftInvites: defineTable({
+    aircraftId: v.id("aircraft"),
+    code: v.string(),
+    role: memberRole,
+    createdBy: v.string(),
+    expiresAt: v.number(),
+    usedBy: v.optional(v.string()),
+  })
+    .index("by_code", ["code"])
+    .index("by_aircraftId", ["aircraftId"]),
 
   squawks: defineTable({
     aircraftId: v.id("aircraft"),

@@ -10,7 +10,7 @@ import { adDue, dueLabel, formatDate, inspectionDue } from "@/lib/currency";
 import { Card, EmptyState, LoadingScreen, Screen, SectionTitle, StatusBadge, Title } from "@/components/ui";
 
 export default function Compliance() {
-  const { current, isLoading } = useAircraft();
+  const { current, isLoading, isOwner, canWrite } = useAircraft();
   const inspections = useQuery(
     api.inspections.listByAircraft,
     current ? { aircraftId: current._id } : "skip",
@@ -58,20 +58,24 @@ export default function Compliance() {
                 : ""}
             </Text>
             <View className="mt-3 flex-row gap-4">
-              <Pressable
-                onPress={() =>
-                  router.push({ pathname: "/complete-inspection", params: { inspectionId: insp._id } })
-                }
-                className="active:opacity-60">
-                <Text className="text-sm font-semibold text-instrument">Record completion</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => updateInspection({ id: insp._id, tracked: !insp.tracked })}
-                className="active:opacity-60">
-                <Text className="text-sm text-flight-400">
-                  {insp.tracked ? "Stop tracking" : "Track"}
-                </Text>
-              </Pressable>
+              {canWrite && (
+                <Pressable
+                  onPress={() =>
+                    router.push({ pathname: "/complete-inspection", params: { inspectionId: insp._id } })
+                  }
+                  className="active:opacity-60">
+                  <Text className="text-sm font-semibold text-instrument">Record completion</Text>
+                </Pressable>
+              )}
+              {isOwner && (
+                <Pressable
+                  onPress={() => updateInspection({ id: insp._id, tracked: !insp.tracked })}
+                  className="active:opacity-60">
+                  <Text className="text-sm text-flight-400">
+                    {insp.tracked ? "Stop tracking" : "Track"}
+                  </Text>
+                </Pressable>
+              )}
             </View>
           </Card>
         );
@@ -79,7 +83,7 @@ export default function Compliance() {
 
       <View className="flex-row items-center justify-between">
         <SectionTitle>Airworthiness Directives</SectionTitle>
-        <View className="flex-row items-center gap-3">
+        <View className={`flex-row items-center gap-3 ${canWrite ? "" : "hidden"}`}>
           <Pressable onPress={() => router.push("/import-ads")} className="active:opacity-60">
             <Ionicons name="cloud-download-outline" size={24} color="#0a84ff" />
           </Pressable>
@@ -99,6 +103,7 @@ export default function Compliance() {
           return (
             <Pressable
               key={ad._id}
+              disabled={!isOwner}
               onLongPress={() =>
                 Alert.alert("Delete AD", `Remove ${ad.adNumber}?`, [
                   { text: "Cancel", style: "cancel" },
