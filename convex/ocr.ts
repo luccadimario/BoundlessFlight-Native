@@ -29,9 +29,12 @@ const ENTRY_SCHEMA = {
     },
     performedBy: { type: ["string", "null"] },
     certificateNumber: { type: ["string", "null"] },
+    // Structured outputs reject an enum on a multi-type ["string", "null"] field
     certificateType: {
-      type: ["string", "null"],
-      enum: ["A&P", "IA", "repair_station", "owner", "other", null],
+      anyOf: [
+        { type: "string", enum: ["A&P", "IA", "repair_station", "owner", "other"] },
+        { type: "null" },
+      ],
     },
     returnToService: {
       type: "boolean",
